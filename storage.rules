@@ -1,0 +1,43 @@
+rules_version = '2';
+
+/*
+  Memoria Storage Security Rules（Phase 2 初期版）
+  写真は families/{familyId}/photos/... 配下に保存し、
+  家族メンバーのみが読み書きできる。役差は Firestore の members/{uid}.role を使意する。
+ */
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myFamilyId() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.familyId;
+    }
+
+    function isMemberOf(fid) {
+      return signedIn() && myFamilyId() == fid;
+    }
+
+    function isFamilyRoleOf(fid) {
+      return isMemberOf(fid)
+        && firestore.get(/databases/(default)/documents/families/$(fid)/members/$(request.auth.uid)).data.role == 'family';
+    }
+
+    /* 写真のアップロードは本人・家族どちらも可能。削除と上書きは家族のみ。 */
+    match /families/{fid}/photos/{allPaths=**} {
+      allow read: if isMemberOf(fid);
+
+      allow create: if isMemberOf(fid);
+
+      allow update, delete: if isFamilyRoleOf(fid);
+    }
+
+    /* その他のパスはすべて拒否化する */
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

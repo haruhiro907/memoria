@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/*
+  Memoria デザイントークン
+  方針: 温かみ・落ち着き・視認性。色だけでは情報を伝えない（アイコン/ラベル併用）。
+*/
+:root {
+  --background: #fbf6ee; /* 全体の背景: クリーム色 */
+  --foreground: #3f3a33; /* 文字: 温めた濃い茶色 */
+
+  --surface: #fffdf8; /* カードの背景 */
+  --surface-accent: #f6e3d5; /* 強調カードの背景 */
+
+  --ink: #3f3a33;
+  --ink-soft: #70665a; /* 補助テキスト（本文 24px 未満でも 4.5:1 を満たす明度） */
+
+  --accent: #d9764a; /* 主要操作: テラコッタ */
+  --accent-deep: #b85c33;
+  --accent-soft: #f6e3d5;
+
+  --go: #4a8f8c; /* 「進む/確定」系操作: 落ち着いた緑 */
+  --go-deep: #376f6c;
+  --go-soft: #dff0ee;
+
+  --back: #8a7f70; /* 「戻る」系操作 */
+  --back-soft: #eee8df;
+
+  --line: #e8ddcc; /* 枠線 */
+  --danger: #b3402e;
+  --danger-soft: #f7e0dc;
+
+  --radius-card: 1.5rem;
+  --radius-btn: 1.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-accent: var(--surface-accent);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-go: var(--go);
+  --color-go-deep: var(--go-deep);
+  --color-go-soft: var(--go-soft);
+  --color-back: var(--back);
+  --color-back-soft: var(--back-soft);
+  --color-line: var(--line);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-rounded), "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+
+  --radius-card: var(--radius-card);
+  --radius-btn: var(--radius-btn);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/*
+  アクセシビリティ: キーボード操作・タブレット操作でも
+  「今どこにいるか」を色と形状の両方で分かるようにする。
+*/
+:where(a, button, [role="button"], input, textarea, select):focus-visible {
+  outline: 5px solid #b85c33;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

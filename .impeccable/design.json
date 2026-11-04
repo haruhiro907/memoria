@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T00:00:00+09:00",
+  "title": "Design System: Memoria",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "焼き菓子テラコッタ", "canonical": "#d9764a", "tonalRamp": ["#5a2a17", "#8a4123", "#b85c33", "#d9764a", "#e69a76", "#f2bfa3", "#f8dcc8", "#fdf1e8"] },
+      "neutral-bg": { "role": "neutral", "displayName": "日ざしのクリーム", "canonical": "#fbf6ee", "tonalRamp": ["#4b453c", "#7d7466", "#a89e8e", "#cfc5b2", "#e8ddcc", "#f4eee2", "#fbf6ee", "#fdfbf6"] },
+      "go": { "role": "secondary", "displayName": "冴えた青緑", "canonical": "#4a8f8c", "tonalRamp": ["#1f4b49", "#2f6b68", "#376f6c", "#4a8f8c", "#7cb3b0", "#adf0ee", "#dff0ee", "#eef7f6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "アプリ名・特大見出しのみ。" },
+      "body": { "displayName": "Body", "purpose": "本人向け画面の基準は 1.5rem。家族向け高密度画面では Label 下限 1rem まで縮小可。" }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "press", "value": "transform 120ms ease-out", "purpose": "ボタン押し込み（scale 0.98）。150ms の上限に基づく。" },
+      { "name": "fade", "value": "opacity 150ms ease-out", "purpose": "表示切替の標準。" }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "主な操作（ホームへ戻るなど）。テラコッタ背景・白文字・アイコン＋ラベル。",
+      "html": "<button class=\"ds-btn-primary\">ホームへ戻る</button>",
+      "css": ".ds-btn-primary { background: var(--color-primary, #d9764a); color: #fff; font: 700 1.5rem/1.4 var(--font-sans, 'M PLUS Rounded 1c', system-ui, sans-serif); padding: 16px 24px; min-height: 64px; border: none; border-radius: 1.25rem; cursor: pointer; transition: background 150ms ease-out, transform 120ms ease-out; display: inline-flex; align-items: center; gap: 12px; } .ds-btn-primary:hover { background: var(--color-primary-deep, #b85c33); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 5px solid #b85c33; outline-offset: 3px; }"
+    },
+    {
+      "name": "Go Button",
+      "kind": "button",
+      "refersTo": "button-go",
+      "description": "進む・確定系の操作。深い青緑・72px の高さ。",
+      "html": "<button class=\"ds-btn-go\">写真を追加</button>",
+      "css": ".ds-btn-go { background: var(--color-go-deep, #376f6c); color: #fff; font: 700 1.875rem/1.4 var(--font-sans, 'M PLUS Rounded 1c', system-ui, sans-serif); padding: 20px 24px; min-height: 72px; border: none; border-radius: 1.25rem; cursor: pointer; transition: background 150ms ease-out, transform 120ms ease-out; width: 100%; } .ds-btn-go:hover { filter: brightness(1.08); } .ds-btn-go:active { transform: scale(0.99); } .ds-btn-go:focus-visible { outline: 5px solid #376f6c; outline-offset: 3px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "戻る系・低優先度の操作。淡い台色＋下線のラベル。",
+      "html": "<button class=\"ds-btn-quiet\">やめる（ログアウト）</button>",
+      "css": ".ds-btn-quiet { background: var(--color-back-soft, #eee8df); color: var(--color-ink, #3f3a33); font: 600 1.25rem/1.5 var(--font-sans, 'M PLUS Rounded 1c', system-ui, sans-serif); padding: 12px 20px; min-height: 56px; border: none; border-radius: 1.25rem; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; cursor: pointer; } .ds-btn-quiet:active { transform: scale(0.98); } .ds-btn-quiet:focus-visible { outline: 5px solid #b85c33; outline-offset: 3px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "白い紙のカード。影なし、色差で層を作る。",
+      "html": "<div class=\"ds-card\"><p style=\"font: 400 1.5rem/1.55 var(--font-sans, system-ui, sans-serif); color: #3f3a33; margin: 0;\">写真が並ぶ領域</p></div>",
+      "css": ".ds-card { background: var(--color-surface, #fffdf8); border: 2px solid var(--color-line, #e8ddcc); border-radius: 1.5rem; padding: 32px; color: var(--color-ink, #3f3a33); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "大きめのテキスト入力。フォーカスはテラコッタの外輪郭。",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"名前を入力\" />",
+      "css": ".ds-input { background: #fff; color: var(--color-ink, #3f3a33); font: 400 1.5rem/1.5 var(--font-sans, 'M PLUS Rounded 1c', system-ui, sans-serif); padding: 16px; border: 2px solid var(--color-line, #e8ddcc); border-radius: 1.25rem; width: 100%; } .ds-input:focus-visible { outline: 5px solid var(--color-primary-deep, #b85c33); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "リビングのアルバム棚",
+    "overview": "Memoria の UI は、家族のリビングにあるアルバム棚そのもの。写真（アルバム）が棚の主であり、UI はその引き出しの把手にすぎない。把手は大きく、堅く、どこにでも手が届く。背景は日ざしのクリームに白いカードを直に重ねるフラット設計で、層は色差で表現する。",
+    "keyCharacteristics": ["写真の面積を最大限、UI は最低限", "大きな文字・大きなボタン・十分な余白", "色だけで情報を伝えない", "押し倒せる感覚の部品", "自動遷移なし・150ms 以内の効果"],
+    "rules": [
+      { "name": "The One Focus Rule", "body": "1 画面に「一番目立つもの」は写真 1 枚か主要ボタン 1 つ。", "section": "colors" },
+      { "name": "The No-Color-Only Rule", "body": "状態・種別を色だけで伝えない。ラベルと形状を必ず併載する。", "section": "colors" },
+      { "name": "The No-Shrink Rule", "body": "補助テキストは 1.25rem 未満に下げない。", "section": "typography" },
+      { "name": "The Paper Stack Rule", "body": "深さは色差で。影は応答のみ。", "section": "elevation" }
+    ],
+    "dos": ["写真の周りに白紙の台紙（枠）を添える", "操作ボタンにアイコン＋日本語ラベルを必ず併載", "層は色差で。クリーム → 白 → 強調台の順序", "進む系の青緑・戻る系の灰茶を動線の約束として使い分ける"],
+    "donts": ["純黒や高飽和の色を使わない", "色だけで状態を伝えない", "影を動的装飾として積む", "写真の上に常時オーバーレイを張る", "自動遷移・自動再生・長いアニメーション"]
+  }
+}

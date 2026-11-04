@@ -1,0 +1,174 @@
+rules_version = '2';
+
+/*
+  Memoria Firestore Security Rules（Phase 2 初期版 / Phase 3・5 でテストと強化を行う）
+
+  基本方針:
+  - 家族単位の分離。家族のデータは families/{fid}/ 配下に入り、
+    users/{uid}.familyId が一致するメンバーだけがアクセスできる。
+  - 編集・管理の権限差は members/{uid}.role で判断する（role の正本は members ドキュメント）。
+  - クライアントのボタン表示はセキュリティとして意味を持たない。強制はすべてここで行う。
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ---------- 共通関数 ---------- */
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isMemberOf(fid) {
+      return signedIn() && userDoc().familyId == fid;
+    }
+
+    function myRoleIn(fid) {
+      return get(/databases/$(database)/documents/families/$(fid)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isFamilyRoleOf(fid) {
+      return isMemberOf(fid) && myRoleIn(fid) == 'family';
+    }
+
+    /* events v2: 精度付き日付の整合検証（value と precision が一致すること） */
+    function validPreciseDate(d) {
+      let v = d.get('value', '');
+      let p = d.get('precision', '');
+      return (p == 'day' && v.matches('^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$'))
+        || (p == 'month' && v.matches('^\\d{4}-(0[1-9]|1[0-2])$'))
+        || (p == 'year' && v.matches('^\\d{4}$'));
+    }
+
+    function validEventDates() {
+      let d = request.resource.data;
+      let s = d.get('startDate', null);
+      let e = d.get('endDate', null);
+      let l = d.get('eraLabel', null);
+      return
+        // startDate があれば、精度と value が一致する
+        (s == null || validPreciseDate(s))
+        // endDate は startDate があるときだけ許し、同じ精度で value が整合する
+        && (e == null || (s != null && validPreciseDate(e) && e.get('precision', '') == s.get('precision', '')))
+        // eraLabel は 30 文字までの文字列
+        && (l == null || (l is string && l.size() <= 30));
+    }
+
+    /* ---------- users: 家族ポインタ ---------- */
+    match /users/{uid} {
+      allow get, list: if signedIn() && request.auth.uid == uid;
+      // 作成時は初期ドキュメント（familyId は後で結び付ける）
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid;
+      // 家族参加は Phase 3 の招待フローで厳密化（コード検証 + getAfter によるバッチ整合性）
+      allow update, delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    /* ---------- families ---------- */
+    match /families/{fid} {
+      // 家族の作成: 作成者自身が createdByUid を設定し、name を持つこと
+      allow create: if signedIn()
+        && request.resource.data.createdByUid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 50;
+
+      allow get, list, update, delete: if isMemberOf(fid);
+
+      /* ---------- members: 家族メンバーと役割（role の正本） ---------- */
+      match /members/{uid} {
+        allow get, list: if isMemberOf(fid);
+
+        // 家族ロールのみが他のメンバーを追加・変更できる
+        // 例外: 家族作成時、現在のユーザー自身を family ロールで最初に追加できる
+        //       （家族の作成と同じバッチ内で実行されることを getAfter で担保）
+        allow create: if (isFamilyRoleOf(fid))
+          || (signedIn()
+              && uid == request.auth.uid
+              && request.resource.data.uid == request.auth.uid
+              && request.resource.data.role == 'family'
+              && request.resource.data.displayName is string
+              && request.resource.data.displayName.size() > 0
+              && request.resource.data.displayName.size() <= 30
+              && getAfter(/databases/$(database)/documents/families/$(fid)).data.createdByUid == request.auth.uid);
+
+        allow update, delete: if isFamilyRoleOf(fid);
+      }
+
+      /* ---------- inviteCodes: 参加コード（Phase 3 で利用） ---------- */
+      match /inviteCodes/{code} {
+        // コードによる参加フローでは、signedIn かつ個人でコードを 1 件読む（list は不許可）
+        allow get: if signedIn();
+        allow list, create, update, delete: if isFamilyRoleOf(fid);
+      }
+
+      /* ---------- photos ---------- */
+      match /photos/{photoId} {
+        // 一覧・詳細はわからせて、本人と家族が同じ画面を利用できる
+        allow read: if isMemberOf(fid);
+
+        // 追加は本人・家族どちらも可能（本人は入力不要フローで追加する）
+        allow create: if isMemberOf(fid)
+          && request.resource.data.addedByUid == request.auth.uid
+          && request.resource.data.storagePath is string
+          && request.resource.data.downloadURL is string;
+
+        /*
+          更新・削除は family ロールのみ。
+          本人は説明や関連付けの編集対象外（本人に情報入力を強制しない 方針）。
+        */
+        allow update, delete: if isFamilyRoleOf(fid);
+
+        /* ---------- 関連（写真⇔人物⇔出来事）: 1 階層の links ドキュメント。ID は person_xxx / event_xxx ---------- */
+        match /links/{linkId} {
+          allow read: if isMemberOf(fid);
+          allow create, update, delete: if isFamilyRoleOf(fid);
+        }
+
+        /* 関連写真や将来の拡張用（現時点では読み取りのみ、作例なし） */
+        match /relevance/{docId} {
+          allow read: if isMemberOf(fid);
+          allow write: if false; // 現段階では書き込めない（AI 拡張は将来対応）
+        }
+      }
+
+      /* ---------- photoReactions: 写真表示イベントの記録 ---------- */
+      match /photoReactions/{reactionId} {
+        allow read: if isMemberOf(fid);
+        // photo_viewed: 実際に表示した写真のみを自分の uid で記録する。
+        // action / method はホワイトリスト。photoId は自家族の実在する写真（getAfter で確認）。
+        // createdAt は serverTimestamp のみ（クライアント時計を持ち込ませない）。
+        allow create: if isMemberOf(fid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.photoId is string
+          && request.resource.data.action == 'photo_viewed'
+          && request.resource.data.method in ['initial', 'swipe', 'button', 'direct']
+          && request.resource.data.createdAt == request.time
+          && getAfter(/databases/$(database)/documents/families/$(fid)/photos/$(request.resource.data.photoId)).data != null;
+        // 記録はあとから編集できない（分析データの信頼性のため）
+        allow update, delete: if false;
+      }
+
+      /* ---------- people / events ---------- */
+      match /people/{personId} {
+        allow read: if isMemberOf(fid);
+        allow create, update, delete: if isFamilyRoleOf(fid);
+      }
+
+      match /events/{eventId} {
+        allow read: if isMemberOf(fid);
+        allow create, update: if isFamilyRoleOf(fid)
+          && validEventDates();
+        allow delete: if isFamilyRoleOf(fid);
+      }
+    }
+
+    /* ---------- その他すべてを拒否モデルとする ---------- */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
