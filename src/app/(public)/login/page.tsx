@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { getFirebase } from "@/lib/firebase/client";
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -49,6 +51,27 @@ export default function LoginPage() {
         /* 本人として入る: 家族は作らず、参加コード入力へ */
         router.replace("/join");
       }
+    } catch (err) {
+      setError(toFriendlyMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /* 家族自身のパスワード再設定（入力中のメールアドレス宛に送る） */
+  const onResetPassword = async () => {
+    setError(null);
+    setResetNotice(null);
+    const target = email.trim();
+    if (!target) {
+      setError("先にメールアドレスを入力してから、もう一度押してください。");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { auth } = getFirebase();
+      await sendPasswordResetEmail(auth, target);
+      setResetNotice(`パスワード再設定のメールを ${target} へ送りました。メール内のリンクから新しいパスワードを設定してください。`);
     } catch (err) {
       setError(toFriendlyMessage(err));
     } finally {
@@ -157,6 +180,25 @@ export default function LoginPage() {
               {busy ? "おまちください…" : mode === "signin" ? "入る（ログイン）" : "登録する"}
             </button>
           </form>
+
+          {mode === "signin" && (
+            <div className="mt-6 border-t-2 border-line pt-5 text-center">
+              {resetNotice ? (
+                <p className="text-xl" aria-live="polite">
+                  {resetNotice}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void onResetPassword()}
+                  disabled={busy}
+                  className="text-xl font-semibold text-ink underline decoration-2 underline-offset-4 disabled:opacity-50"
+                >
+                  パスワードを忘れた場合はこちら
+                </button>
+              )}
+            </div>
+          )}
 
           <p className="mt-6 text-center text-lg text-ink-soft">
             本人の参加コードは、家族の設定画面で発行します。

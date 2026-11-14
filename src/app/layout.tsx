@@ -12,7 +12,7 @@ const rounded = M_PLUS_Rounded_1c({
 });
 
 export const metadata: Metadata = {
-  title: "Memoria|写真から、人生をたどる",
+  title: "Memoria | 写真から、人生をたどる",
   description:
     "本人と家族が写真を追加し、思い出をいっしょにたどることができるアプリです。",
 };

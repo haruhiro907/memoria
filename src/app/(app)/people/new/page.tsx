@@ -71,7 +71,7 @@ export default function PersonNewPage() {
 
       <div className="mt-6 flex justify-end">
         <BigButton tone="quiet" icon={<HomeIcon size={20} />} onClick={() => router.push("/people")}>
-          一覧に戻る
+          やめる
         </BigButton>
       </div>
     </div>

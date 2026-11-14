@@ -85,10 +85,12 @@ function PhotoDetailBody({ photoId }: { photoId: string }) {
 
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
 
   const removePhoto = useCallback(async () => {
     if (!photo || !familyId) return;
     setDeleting(true);
+    setDeleteError(false);
     try {
       try {
         await deleteObject(ref(getFirebase().storage, photo.data.storagePath));
@@ -98,8 +100,10 @@ function PhotoDetailBody({ photoId }: { photoId: string }) {
       await deletePhotoDoc(familyId, photo.id);
       router.push("/photos");
     } catch {
+      /* 失敗を無言で閉じない（家族が成否を誤認しないように画面に残す） */
       setDeleting(false);
       setConfirmingDelete(false);
+      setDeleteError(true);
     }
   }, [photo, familyId, router]);
 
@@ -202,6 +206,12 @@ function PhotoDetailBody({ photoId }: { photoId: string }) {
       />
 
       <RelatedPhotos familyId={familyId} photo={photo} />
+
+      {deleteError && (
+        <p role="alert" className="mt-6 rounded-btn border-2 border-danger bg-danger-soft px-4 py-3 text-center text-xl">
+          写真を削除できませんでした。通信を確認して、もう一度ためしてください。
+        </p>
+      )}
 
       {confirmingDelete && (
         <ConfirmDialog

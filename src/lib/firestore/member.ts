@@ -17,6 +17,7 @@ const memberSchema = z.object({
   displayName: z.string(),
   role: z.enum(["person", "family"]),
   issuedByUid: z.string().nullable().optional().catch(null),
+  email: z.string().nullable().optional().catch(null),
   createdAt: z.number(),
 });
 
