@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { getFirebase } from "@/lib/firebase/client";
 import { useSession } from "@/lib/auth/session";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 /*
  * ログイン後の共通シェル
@@ -50,12 +51,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function ShellHeader() {
   const pathname = usePathname();
-  const { displayName, role } = useSession();
+  const { displayName, role, status, familyId } = useSession();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const isHome = pathname === "/home";
+  /* 家族に未参加の間は JoinGate が /join へ誘導する。その間「ホームへ戻る」を
+     出すと、押しても /join に戻るだけの無効なボタンになるため、ブランド表示にする */
+  const preJoin = status === "authenticated" && familyId === null;
 
   return (
     <header className="flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
-      {!isHome ? (
+      {preJoin ? (
+        <span className="text-3xl font-bold tracking-tight sm:text-4xl">Memoria</span>
+      ) : !isHome ? (
         <Link
           href="/home"
           className="flex items-center gap-3 rounded-btn bg-accent px-6 py-4 text-2xl font-bold text-white shadow-sm transition-transform active:scale-[0.98]"
@@ -76,13 +83,32 @@ function ShellHeader() {
         )}
         <button
           type="button"
-          onClick={() => void signOut(getFirebase().auth)}
+          onClick={() => setConfirmLogout(true)}
           className="rounded-btn bg-back-soft px-5 py-3 text-xl font-semibold text-ink underline decoration-2 underline-offset-4"
           aria-label="ログアウトする"
         >
           やめる（ログアウト）
         </button>
       </div>
+
+      {/* ログアウトは誤タップで本人がログイン壁に落ちるため、必ず確認を挟む */}
+      {confirmLogout && (
+        <ConfirmDialog
+          title="ログアウトしますか"
+          body={
+            role === "person"
+              ? "ログアウトすると、次に使うとき家族の方に手伝ってもらう必要があります。家族の方といっしょのときだけ押してください。"
+              : "この端末からログアウトします。写真や記録は消えません。"
+          }
+          confirmLabel="ログアウトする"
+          cancelLabel="もどる"
+          onConfirm={() => {
+            setConfirmLogout(false);
+            void signOut(getFirebase().auth);
+          }}
+          onCancel={() => setConfirmLogout(false)}
+        />
+      )}
     </header>
   );
 }

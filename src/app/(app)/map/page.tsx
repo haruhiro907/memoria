@@ -192,21 +192,21 @@ export default function MapPage() {
               <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {model.eraEvents.map((st) => (
                   <li key={st.id}>
-                    <BigLink
+                    <Link
                       href={`/events/${st.id}`}
-                      tone="primary"
-                      wide
-                      className="min-h-28 py-6 text-left"
+                      className="flex min-h-28 items-start gap-4 rounded-card bg-surface p-6 ring-2 ring-inset ring-line transition-transform active:scale-[0.99]"
                     >
-                      <MapIcon size={32} />
-                      <span>
-                        <span className="block text-2xl font-bold">
+                      <span className="mt-1 shrink-0 text-accent-deep" aria-hidden="true">
+                        <MapIcon size={32} />
+                      </span>
+                      <span className="block">
+                        <span className="block text-2xl font-bold text-ink">
                           {st.data.icon ? `${st.data.icon} ` : ""}
                           {st.data.title}
                         </span>
-                        <span className="mt-1 block text-xl font-normal text-white/85">{st.data.eraLabel}</span>
+                        <span className="mt-1 block text-xl text-ink-soft">{st.data.eraLabel}</span>
                       </span>
-                    </BigLink>
+                    </Link>
                   </li>
                 ))}
               </ul>

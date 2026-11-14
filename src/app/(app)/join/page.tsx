@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { getFirebase } from "@/lib/firebase/client";
 import { useSession } from "@/lib/auth/session";
 import { joinFamilyWithCode, personAccountErrorMessage } from "@/lib/functions/personAccounts";
 import { BigButton } from "@/components/ui/BigButton";
@@ -16,7 +18,7 @@ import { BigButton } from "@/components/ui/BigButton";
  */
 export default function JoinPage() {
   const router = useRouter();
-  const { status, familyId } = useSession();
+  const { status, familyId, email } = useSession();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -59,6 +61,13 @@ export default function JoinPage() {
         コードの有効期限は 15 分です。この設定は家族の方が行ってください。
       </p>
 
+      {/* どのアカウントで参加しようとしているかを明示する（取り違え防止） */}
+      {email && (
+        <p className="mt-5 rounded-btn border-2 border-line bg-surface px-4 py-3 text-xl">
+          いま <span className="font-bold">{email}</span> でログインしています
+        </p>
+      )}
+
       {done ? (
         <p className="mt-10 rounded-card border-2 border-go bg-go-soft p-6 text-center text-2xl font-bold" aria-live="polite">
           参加できました。ホームへ進みます…
@@ -97,6 +106,19 @@ export default function JoinPage() {
         参加コードは、家族の方が家族用アカウントで「家族の設定」から発行します。
         コードが分からない場合は、家族の方にご確認ください。
       </p>
+
+      {!done && (
+        <div className="mt-8 border-t-2 border-line pt-6">
+          <p className="text-lg text-ink-soft">
+            アカウントを間違えた場合は、いったんログアウトしてログインし直してください。
+          </p>
+          <div className="mt-4">
+            <BigButton tone="quiet" onClick={() => void signOut(getFirebase().auth)}>
+              ログアウトする
+            </BigButton>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

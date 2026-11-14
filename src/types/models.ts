@@ -41,6 +41,13 @@ export interface MemberDoc {
   role: MemberRole;
   /** 本人アカウントは家族が発行する共有アカウントであり得る（発行元 uid） */
   issuedByUid?: string;
+  /**
+   * 登録メールアドレス（本人 member のみ保持する）。
+   * 家族の設定画面で現アドレスを表示し、復旧操作を記憶に頼らせないために持つ。
+   * 発行フロー（inviteCodes 経由）で引き継がれ、訂正時に Functions が更新する。
+   * 旧データには無いことがある。
+   */
+  email?: string | null;
   createdAt: number;
 }
 
@@ -59,6 +66,8 @@ export interface InviteCodeDoc {
   personUid: string;
   /** 本人の表示名（参加時に members へ引き継ぐ） */
   displayName: string;
+  /** 本人の登録メール（参加時に members へ引き継ぐ。設定画面の現アドレス表示用） */
+  email: string;
   createdByUid: string;
   createdAt: Timestamp;
   /** 発行から 15 分 */

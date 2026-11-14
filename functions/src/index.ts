@@ -150,6 +150,8 @@ export const createPersonAccount = onCall(async (request) => {
     code,
     personUid: newUid,
     displayName: name,
+    /* 本人の登録メール。参加時に members へ引き継ぎ、設定画面で現アドレスを表示する */
+    email: (email as string).trim(),
     createdByUid: callerUid,
     createdAt: FieldValue.serverTimestamp(),
     expiresAt: Timestamp.fromMillis(expiresAtMs),
@@ -257,6 +259,8 @@ export const joinFamilyWithCode = onCall(async (request) => {
       uid,
       displayName:
         (codeSnap.get("displayName") as string | undefined) ?? "本人",
+      /* 発行時の登録メールを引き継ぐ（設定画面の現アドレス表示・復旧用） */
+      email: (codeSnap.get("email") as string | undefined) ?? null,
       role: "person",
       issuedByUid: (codeSnap.get("createdByUid") as string | undefined) ?? null,
       createdAt: Date.now(),
@@ -331,6 +335,8 @@ export const updatePersonEmail = onCall(async (request) => {
     if (code === "auth/invalid-email") throw new HttpsError("invalid-argument", "invalid-email");
     throw new HttpsError("internal", "update-failed");
   }
+  /* 設定画面の現アドレス表示も追随させる */
+  await member.ref.update({ email: (newEmail as string).trim() });
   return { email: (newEmail as string).trim() };
 });
 

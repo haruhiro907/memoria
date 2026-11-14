@@ -100,7 +100,12 @@ export default function SettingsPage() {
           <ul className="mt-4 divide-y-2 divide-line rounded-card border-2 border-line bg-surface">
             {members.map((m) => (
               <li key={m.uid} className="flex items-center justify-between gap-4 px-5 py-4">
-                <span className="text-2xl font-semibold">{m.data.displayName}</span>
+                <span>
+                  <span className="block text-2xl font-semibold">{m.data.displayName}</span>
+                  {m.data.email && (
+                    <span className="mt-0.5 block text-lg text-ink-soft">{m.data.email}</span>
+                  )}
+                </span>
                 <span className="rounded-full border-2 border-line bg-back-soft px-4 py-1 text-lg font-bold">
                   {m.data.role === "family" ? "家族" : "本人"}
                 </span>
@@ -216,7 +221,7 @@ function CreatePersonForm() {
 /* ---------- 発行済み本人アカウントの管理 ---------- */
 
 function PersonAccountManager({ person }: { person: MemberSummary }) {
-  const [resetEmail, setResetEmail] = useState("");
+  const [resetEmail, setResetEmail] = useState(person.data.email ?? "");
   const [newEmail, setNewEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -269,6 +274,9 @@ function PersonAccountManager({ person }: { person: MemberSummary }) {
         <span className="font-bold">{person.data.displayName}</span>
         <span className="ml-3 text-xl text-ink-soft">（本人として参加中）</span>
       </p>
+      <p className="mt-2 text-xl text-ink-soft">
+        登録メール: {person.data.email ?? "（未登録）"}
+      </p>
 
       {message && (
         <p className="mt-5 rounded-btn border-2 border-go bg-go-soft px-4 py-3 text-xl" aria-live="polite">
@@ -283,8 +291,11 @@ function PersonAccountManager({ person }: { person: MemberSummary }) {
 
       <form onSubmit={onReset} className="mt-8 space-y-4">
         <h4 className="text-2xl font-bold">パスワードを再設定する</h4>
+        <p className="text-xl text-ink-soft">
+          登録メールに、パスワード再設定のメールを送ります（初期状態で登録メールが入っています）。
+        </p>
         <label className="block">
-          <span className="text-xl font-semibold">登録したメールアドレス</span>
+          <span className="text-xl font-semibold">登録メールアドレス</span>
           <input
             type="email"
             required
@@ -300,6 +311,9 @@ function PersonAccountManager({ person }: { person: MemberSummary }) {
 
       <form onSubmit={onUpdateEmail} className="mt-10 space-y-4">
         <h4 className="text-2xl font-bold">メールアドレスを訂正する</h4>
+        <p className="text-xl text-ink-soft">
+          現在のメールアドレス: {person.data.email ?? "（未登録）"}
+        </p>
         <label className="block">
           <span className="text-xl font-semibold">新しいメールアドレス</span>
           <input
