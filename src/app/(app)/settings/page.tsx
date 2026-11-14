@@ -256,6 +256,8 @@ function PersonAccountManager({ person }: { person: MemberSummary }) {
     void run(async () => {
       const { email } = await updatePersonEmail(person.uid, newEmail.trim());
       setNewEmail("");
+      /* 再設定フォームの初期値も新しいアドレスへ追随させる（表示との矛盾を防ぐ） */
+      setResetEmail(email);
       return `メールアドレスを ${email} に変更しました。`;
     });
   };

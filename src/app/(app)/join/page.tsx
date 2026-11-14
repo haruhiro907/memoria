@@ -7,6 +7,7 @@ import { getFirebase } from "@/lib/firebase/client";
 import { useSession } from "@/lib/auth/session";
 import { joinFamilyWithCode, personAccountErrorMessage } from "@/lib/functions/personAccounts";
 import { BigButton } from "@/components/ui/BigButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 /**
  * 参加コード入力画面（Phase 4 / docs/phase4-spec.md §1.4・§1.6）
@@ -23,6 +24,7 @@ export default function JoinPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   /* 参加が確定したらホームへ（セッションの familyId 更新に追随する） */
   useEffect(() => {
@@ -113,11 +115,26 @@ export default function JoinPage() {
             アカウントを間違えた場合は、いったんログアウトしてログインし直してください。
           </p>
           <div className="mt-4">
-            <BigButton tone="quiet" onClick={() => void signOut(getFirebase().auth)}>
+            <BigButton tone="quiet" onClick={() => setConfirmLogout(true)}>
               ログアウトする
             </BigButton>
           </div>
         </div>
+      )}
+
+      {/* ヘッダーのログアウトと同じく、確認を挟んでから実行する（挙動を統一） */}
+      {confirmLogout && (
+        <ConfirmDialog
+          title="ログアウトしますか"
+          body="いったんログアウトします。ログインし直すときは、メールアドレスとパスワードが必要です。"
+          confirmLabel="ログアウトする"
+          cancelLabel="もどる"
+          onConfirm={() => {
+            setConfirmLogout(false);
+            void signOut(getFirebase().auth);
+          }}
+          onCancel={() => setConfirmLogout(false)}
+        />
       )}
     </div>
   );
