@@ -4,13 +4,12 @@ import { doc, updateDoc, writeBatch, collection } from "firebase/firestore";
 import { getFirebase } from "@/lib/firebase/client";
 
 /**
- * 家族グループの簡易セットアップ（Phase 3）
+ * 家族グループの作成（Phase 4 / docs/phase4-spec.md §1.6）
  *
- * 方針変更（ユーザー指示）により、認証・招待は簡略化する。
- * - ログインしたユーザーがまだ家族に属していない場合、
- *   その場で「自分の家族グループ」を作成し、family ロールのメンバーになる。
- * - 招待コード・複数アカウントの合流は後回し（既定: 家族で 1 アカウント共有）。
- * - データ分離は従来どおり families/{fid}/ 配下 + Security Rules で行う。
+ * - 登録画面で「家族として始める」を選んだときにだけ明示的に呼ぶ。
+ *   ログインしただけで自動作成はしない（AuthProvider は未参加状態を保つ）。
+ * - 本人アカウントの参加は参加コード（Cloud Functions）で行う。
+ * - データ分離は families/{fid}/ 配下 + Security Rules で行う。
  */
 export async function ensureUserFamily(uid: string, displayName: string | null): Promise<string> {
   const { db } = getFirebase();

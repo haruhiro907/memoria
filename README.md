@@ -23,10 +23,18 @@ npm run dev        # http://localhost:3000
 ### エミュレータの起動（別ターミナル）
 
 ```bash
-npm run emulators  # Auth: 9099 / Firestore: 8080 / Storage: 9199 / UI: 4000
+npm run emulators  # Auth: 9099 / Firestore: 8080 / Storage: 9199 / Functions: 5001 / UI: 4000
 ```
 
 初回は `npx firebase login` が必要です。エミュレータユーザーは事前登録不要です（UI またはアプリのアカウント作成フローから作れます）。
+
+### Phase 4（個別アカウント方式）
+
+仕様は [`docs/phase4-spec.md`](docs/phase4-spec.md) を参照。
+
+- 本人アカウントの発行・参加コードの消費・パスワード再設定の確認などは `functions/` の Cloud Functions（Admin SDK）が行います。`functions/` は独立プロジェクトです（`cd functions && npm install && npm run build`）。
+- 登録画面では「家族として始める / 参加コードで本人として入る」を選びます。ログインしただけでは家族は自動作成されません。
+- 家族はホームの「家族の設定」（`/settings`）から本人アカウントを発行し、参加コード（6 桁・15 分）を本人のタブレットの参加画面（`/join`）に入力します。
 
 ## 本番の Firebase プロジェクトに接続する場合
 
@@ -42,6 +50,7 @@ src/app/(app)/…     ログイン後の共通画面（ホーム・写真・人�
 src/app/(public)/…  ログイン画面
 src/lib/firebase/…  Firebase クライアント（エミュレータ切替対応）
 src/lib/auth/…      認証・役割（person / family）の状態管理
+functions/…         Cloud Functions（本人アカウント発行・参加などのサーバー処理）
 src/types/models.ts Firestore のデータモデル
 firestore.rules     セキュリティルール（家族単位の分離）
 storage.rules       写真ファイルのルール

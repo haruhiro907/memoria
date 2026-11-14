@@ -98,11 +98,11 @@ service cloud.firestore {
         allow update, delete: if isFamilyRoleOf(fid);
       }
 
-      /* ---------- inviteCodes: 参加コード（Phase 3 で利用） ---------- */
+      /* ---------- inviteCodes: 参加コード（Phase 4 / docs/phase4-spec.md §1.3・§6） ---------- */
       match /inviteCodes/{code} {
-        // コードによる参加フローでは、signedIn かつ個人でコードを 1 件読む（list は不許可）
-        allow get: if signedIn();
-        allow list, create, update, delete: if isFamilyRoleOf(fid);
+        // 生成・検証・消費は Cloud Functions（Admin SDK）だけが行う。
+        // クライアントからは読み書きすべて不可（コードの推測・列挙を構造的に防ぐ）。
+        allow read, write: if false;
       }
 
       /* ---------- photos ---------- */

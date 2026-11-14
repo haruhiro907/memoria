@@ -1,5 +1,7 @@
+import type { Timestamp } from "firebase/firestore";
+
 /**
- * Memoria のデータモデル（Phase 1 設計書 docs/phase1-design.md に対応）
+ * Memoria のデータモデル（Phase 1 設計書 docs/phase1-design.md / Phase 4 仕様 docs/phase4-spec.md に対応）
  *
  * パス構成:
  *   users/{uid}                              … 家族ポインタ（uid, familyId）
@@ -42,12 +44,36 @@ export interface MemberDoc {
   createdAt: number;
 }
 
-/** families/{familyId}/inviteCodes/{code} */
+/**
+ * families/{familyId}/inviteCodes/{code}（Phase 4 §1.3）
+ *
+ * 参加コードのドキュメント。生成・検証・消費は Cloud Functions（Admin SDK）
+ * のみが行い、クライアントからは読み書きできない（Rules で全面拒否）。
+ * 時刻はサーバー時刻（Firestore Timestamp）。
+ */
 export interface InviteCodeDoc {
-  familyId: string;
-  createdAt: number;
+  kind: "person";
+  /** ドキュメント ID と同じ 6 桁コード（collectionGroup 検索用にフィールドにも持つ） */
+  code: string;
+  /** 発行対象の本人アカウント uid */
+  personUid: string;
+  /** 本人の表示名（参加時に members へ引き継ぐ） */
+  displayName: string;
+  createdByUid: string;
+  createdAt: Timestamp;
+  /** 発行から 15 分 */
+  expiresAt: Timestamp;
   usedByUid: string | null;
-  usedAt: number | null;
+  usedAt: Timestamp | null;
+  /** 失敗した検証の回数（5 回で無効） */
+  attempts: number;
+}
+
+/** joinAttempts/{uid}（サーバー内部用・Phase 4 §5）: 参加試行のレート制限 */
+export interface JoinAttemptsDoc {
+  count: number;
+  windowStartMs: number;
+  updatedAt: number;
 }
 
 /* ---------- photos ---------- */
@@ -113,19 +139,18 @@ export interface EventDoc {
 }
 
 /* ---------- photoReactions ---------- */
-/** 思い出を探す（/explore）での操作記録。将来の AI 機能への素材（現時点では AI は実装しない） */
-export type ExploreAction =
-  | "swipe_next"
-  | "swipe_back"
-  | "button_next"
-  | "button_back";
+/*
+ * 「実際に写真が表示された」瞬間の記録（Phase 4 §4）。
+ * 本人 / 家族の区別は uid で行い、分析時に members.role と結合する。
+ * 閲覧時間・反応速度などの指標は持たない。
+ */
+export type PhotoViewMethod = "initial" | "swipe" | "button" | "direct";
 
 export interface PhotoReactionDoc {
-  photoId: string;
   uid: string;
-  action: ExploreAction;
-  /** その写真をどれくらい見つめていたか（ミリ秒）。将来の分析用 */
-  dwellMs: number | null;
-  viewedAt: number;
-  createdAt: number;
+  photoId: string;
+  action: "photo_viewed";
+  method: PhotoViewMethod;
+  /** サーバー時刻（serverTimestamp） */
+  createdAt: Timestamp;
 }

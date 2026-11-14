@@ -36,6 +36,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<HeaderFallback />}>
         <ShellHeader />
       </Suspense>
+      <Suspense fallback={null}>
+        <JoinGate />
+      </Suspense>
 
       <main className="flex-1 px-5 pb-16 sm:px-8">{children}</main>
 
@@ -86,6 +89,25 @@ function ShellHeader() {
 
 function HeaderFallback() {
   return <header className="px-5 py-4 sm:px-8" aria-hidden="true" />;
+}
+
+/**
+ * 家族に未参加（familyId が null）のログイン済みユーザーは、
+ * 参加コード入力画面（/join）へ誘導する（Phase 4 §1.6）。
+ * 家族作成・コード参加で familyId が付くと、通常の画面に戻れる。
+ */
+function JoinGate() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { status, familyId } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated" && familyId === null && pathname !== "/join") {
+      router.replace("/join");
+    }
+  }, [status, familyId, pathname, router]);
+
+  return null;
 }
 
 function AuthOverlay({ status }: { status: "loading" | "unauthenticated" }) {

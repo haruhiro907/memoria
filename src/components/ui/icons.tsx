@@ -206,3 +206,14 @@ export function AlertIcon(props: IconProps) {
     </svg>
   );
 }
+
+/** 設定（つまみのスライダー） */
+export function SettingsIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 7h9M19 7h1M4 17h3M13 17h7" />
+      <circle cx="16" cy="7" r="2.2" />
+      <circle cx="10" cy="17" r="2.2" />
+    </svg>
+  );
+}

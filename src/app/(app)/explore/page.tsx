@@ -238,6 +238,13 @@ export default function ExplorePage() {
       <p className="mt-10 text-center text-lg text-ink-soft">
         横に払っても、ボタンでも、動かせます。
       </p>
+
+      {/* おわり: いつでも自分の意思でホームへ戻れる（仕様 §2 の遷移。自動遷移はしない） */}
+      <div className="mt-8 flex justify-center">
+        <BigLink href="/home" tone="quiet" className="sm:min-w-64">
+          おわり（ホームへ）
+        </BigLink>
+      </div>
     </div>
   );
 }

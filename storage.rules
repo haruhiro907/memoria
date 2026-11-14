@@ -3,7 +3,7 @@ rules_version = '2';
 /*
   Memoria Storage Security Rules（Phase 2 初期版）
   写真は families/{familyId}/photos/... 配下に保存し、
-  家族メンバーのみが読み書きできる。役差は Firestore の members/{uid}.role を使意する。
+  家族メンバーのみが読み書きできる。役割差は Firestore の members/{uid}.role を使う。
  */
 
 service firebase.storage {
@@ -35,7 +35,7 @@ service firebase.storage {
       allow update, delete: if isFamilyRoleOf(fid);
     }
 
-    /* その他のパスはすべて拒否化する */
+    /* その他のパスはすべて拒否する */
     match /{allPaths=**} {
       allow read, write: if false;
     }
