@@ -230,16 +230,21 @@ export const joinFamilyWithCode = onCall(async (request) => {
   if (!fid) throw new HttpsError("internal", "code-family-missing");
   const memberRef = db.doc(`families/${fid}/members/${uid}`);
 
-  type JoinStatus = "ok" | "used" | "expired" | "locked";
+  type JoinStatus = "ok" | "used" | "expired" | "locked" | "already-joined";
   const status = await db.runTransaction<JoinStatus>(async (tx) => {
     const codeSnap = await tx.get(codeRef);
     const userInTx = await tx.get(userRef);
     if (!codeSnap.exists) return "used";
-    if (((userInTx.get("familyId") as string | null) ?? null) !== null) return "used";
+    /* すでに家族に参加済みなら、コードの状態とは切り分けて伝える */
+    if (((userInTx.get("familyId") as string | null) ?? null) !== null) return "already-joined";
     const usedBy = codeSnap.get("usedByUid") as string | null;
     const attempts = (codeSnap.get("attempts") as number | undefined) ?? 0;
     const exp = codeSnap.get("expiresAt") as Timestamp | undefined;
-    if (usedBy != null) return "used";
+    if (usedBy != null) {
+      /* 失敗した検証はコード側の attempts にも数える（§1.3: 5 回失敗で無効化） */
+      tx.update(codeRef, { attempts: attempts + 1 });
+      return "used";
+    }
     if (attempts >= MAX_CODE_ATTEMPTS) {
       return "locked";
     }
@@ -261,6 +266,9 @@ export const joinFamilyWithCode = onCall(async (request) => {
   });
 
   if (status !== "ok") {
+    if (status === "already-joined") {
+      throw new HttpsError("failed-precondition", "already-joined");
+    }
     await recordJoinFailure(uid);
     if (status === "used") throw new HttpsError("failed-precondition", "code-used");
     if (status === "expired") throw new HttpsError("failed-precondition", "code-expired");
