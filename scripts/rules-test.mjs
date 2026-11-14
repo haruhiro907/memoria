@@ -12,6 +12,7 @@
  *   B. events v2: 精度付き日付の整合（value と precision の一致・endDate は
  *      startDate 前提で同精度・eraLabel は 30 文字まで）
  *   C. 家族分離 / role 区分（family 以外は events を作れない・他家族のデータは読めない）
+ *   D. inviteCodes: クライアントからの読み書きを全面拒否（生成・消費は Cloud Functions のみ）
  */
 import fs from "node:fs";
 import {
@@ -249,6 +250,36 @@ test("C2 他家族のメンバーは photoReactions を読めない・書けな�
   await assertFails(
     setDoc(doc(dbFor(UID_FAMILY_B), "families", FAM_A, "photoReactions", rid()), reaction(UID_FAMILY_B)),
   );
+});
+
+/* ---------- D. inviteCodes（Phase 4: クライアント全面拒否） ---------- */
+
+test("D1 inviteCodes は家族ロールでも読み書きできない（Functions のみ）", async () => {
+  const codeRef = (uid) => doc(dbFor(uid), "families", FAM_A, "inviteCodes", "123456");
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "families", FAM_A, "inviteCodes", "123456"), {
+      kind: "person",
+      code: "123456",
+      usedByUid: null,
+      attempts: 0,
+    });
+  });
+  await assertFails(getDoc(codeRef(UID_FAMILY)));
+  await assertFails(setDoc(codeRef(UID_FAMILY), { kind: "person", code: "123456" }));
+  await assertFails(deleteDoc(codeRef(UID_FAMILY)));
+});
+
+test("D2 inviteCodes は本人・他家族からも読めない", async () => {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "families", FAM_A, "inviteCodes", "654321"), {
+      kind: "person",
+      code: "654321",
+      usedByUid: null,
+      attempts: 0,
+    });
+  });
+  await assertFails(getDoc(doc(dbFor(UID_PERSON), "families", FAM_A, "inviteCodes", "654321")));
+  await assertFails(getDoc(doc(dbFor(UID_FAMILY_B), "families", FAM_A, "inviteCodes", "654321")));
 });
 
 /* ---------- runner ---------- */

@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
     // サードパーティのスクリプトを含むツール領域
     ".opencode/**",
     ".impeccable/**",
+    // Cloud Functions は独立プロジェクト（独自の tsconfig / 依存）として扱う
+    "functions/**",
   ]),
 ]);
 

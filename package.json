@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:rules": "node scripts/rules-test.mjs",
-    "emulators": "firebase emulators:start --only auth,firestore,storage"
+    "emulators": "firebase emulators:start --only auth,firestore,storage,functions"
   },
   "dependencies": {
     "dayjs": "^1.11.23",

@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions, type Functions } from "firebase/functions";
 import { connectStorageEmulator, getStorage, type FirebaseStorage } from "firebase/storage";
 
 /*
@@ -26,6 +27,7 @@ let app: FirebaseApp;
 let authInstance: Auth;
 let dbInstance: Firestore;
 let storageInstance: FirebaseStorage;
+let functionsInstance: Functions;
 let emulatorConnected = false;
 
 function ensureInit() {
@@ -35,12 +37,14 @@ function ensureInit() {
   authInstance = getAuth(app);
   dbInstance = getFirestore(app);
   storageInstance = getStorage(app);
+  functionsInstance = getFunctions(app);
 
   if (useEmulators && !emulatorConnected && typeof window !== "undefined") {
     emulatorConnected = true;
     connectAuthEmulator(authInstance, "http://127.0.0.1:9099", { disableWarnings: true });
     connectFirestoreEmulator(dbInstance, "127.0.0.1", 8080);
     connectStorageEmulator(storageInstance, "127.0.0.1", 9199);
+    connectFunctionsEmulator(functionsInstance, "127.0.0.1", 5001);
   }
 }
 
@@ -49,9 +53,10 @@ export type MemoriaFirebase = {
   auth: Auth;
   db: Firestore;
   storage: FirebaseStorage;
+  functions: Functions;
 };
 
 export function getFirebase(): MemoriaFirebase {
   ensureInit();
-  return { app, auth: authInstance, db: dbInstance, storage: storageInstance };
+  return { app, auth: authInstance, db: dbInstance, storage: storageInstance, functions: functionsInstance };
 }

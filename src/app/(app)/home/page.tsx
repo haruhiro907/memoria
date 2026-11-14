@@ -6,7 +6,7 @@ import { watchRecentPhotos, type PhotoSummary } from "@/lib/firestore/photo";
 import { useSession } from "@/lib/auth/session";
 import { PhotoTile } from "@/components/ui/PhotoTile";
 import { BigLink } from "@/components/ui/BigButton";
-import { AlbumIcon, CameraIcon, FlagIcon, MapIcon, PeopleIcon, SwipeIcon } from "@/components/ui/icons";
+import { AlbumIcon, CameraIcon, FlagIcon, MapIcon, PeopleIcon, SettingsIcon, SwipeIcon } from "@/components/ui/icons";
 import dayjs from "dayjs";
 
 /*
@@ -110,6 +110,15 @@ export default function HomePage() {
         <MenuTile href="/events" icon={<FlagIcon size={40} />} label="出来事から探す" tone="plain" />
         <MenuTile href="/map" icon={<MapIcon size={40} />} label="人生の地図" tone="plain" />
       </nav>
+
+      {/* 家族の管理（family ロールのみ）: 本人アカウントの発行・設定 */}
+      {role === "family" && (
+        <section className="mt-10" aria-label="家族の管理">
+          <BigLink href="/settings" tone="quiet" wide icon={<SettingsIcon size={26} />}>
+            家族の設定（本人のアカウント発行など）
+          </BigLink>
+        </section>
+      )}
 
       {role === "family" && (
         <p className="mt-10 text-center text-lg text-ink-soft">
