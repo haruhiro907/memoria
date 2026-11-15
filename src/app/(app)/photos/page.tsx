@@ -15,7 +15,7 @@ import dayjs from "dayjs";
  */
 
 export default function PhotosPage() {
-  const { familyId } = useSession();
+  const { familyId, role } = useSession();
   const [photos, setPhotos] = useState<PhotoSummary[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -36,11 +36,18 @@ export default function PhotosPage() {
     <div className="mx-auto max-w-6xl">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-3xl font-bold">写真</h2>
-        {familyId && (
-          <BigLink href="/photos/new" tone="go" icon={<CameraIcon size={30} />}>
-            写真を追加
-          </BigLink>
-        )}
+        <div className="flex items-center gap-3">
+          {role === "family" && (
+            <BigLink href="/reflections" tone="quiet">
+              ふりかえり
+            </BigLink>
+          )}
+          {familyId && (
+            <BigLink href="/photos/new" tone="go" icon={<CameraIcon size={30} />}>
+              写真を追加
+            </BigLink>
+          )}
+        </div>
       </div>
 
       {error && (
