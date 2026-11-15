@@ -151,12 +151,14 @@ export default function LoginPage() {
               />
             </label>
             <label className="block">
-              <span className="text-2xl font-semibold">パスワード</span>
+              <span className="text-2xl font-semibold">
+                パスワード{mode === "signup" ? "（8 文字以上）" : ""}
+              </span>
               <input
                 type="password"
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 required
-                minLength={6}
+                minLength={mode === "signup" ? 8 : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-2 w-full rounded-btn border-2 border-line bg-white px-4 py-4 text-2xl"
@@ -263,7 +265,7 @@ function toFriendlyMessage(err: unknown): string {
     case "auth/email-already-in-use":
       return "このメールアドレスはすでに使われています。「つづきから」をお試しください。";
     case "auth/weak-password":
-      return "パスワードは 6 文字以上にしてください。";
+      return "パスワードは 8 文字以上にしてください。";
     case "auth/network-request-failed":
       return "ネットワークに接続できません。Wi-Fi や回線をご確認ください。";
     default:

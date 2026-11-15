@@ -192,7 +192,7 @@ function PhotoDetailBody({ photoId }: { photoId: string }) {
         ]}
         emptyNote="人物を登録すると、ここにつなげられます。"
         isFamily={isFamily}
-        onToggle={(pid, linked) => void togglePhotoPersonLink(familyId!, photo.id, pid, linked)}
+        onToggle={(pid, linked) => togglePhotoPersonLink(familyId!, photo.id, pid, linked)}
       />
 
       <LinkSection
@@ -202,7 +202,7 @@ function PhotoDetailBody({ photoId }: { photoId: string }) {
         allLabels={[...events.map((e) => ({ id: e.id, label: e.data.title, href: `/events/${e.id}` }))]}
         emptyNote="出来事を登録すると、ここにつなげられます。"
         isFamily={isFamily}
-        onToggle={(eid, linked) => void togglePhotoEventLink(familyId!, photo.id, eid, linked)}
+        onToggle={(eid, linked) => togglePhotoEventLink(familyId!, photo.id, eid, linked)}
       />
 
       <RelatedPhotos familyId={familyId} photo={photo} />
@@ -254,12 +254,17 @@ function DescriptionEditorInner({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const save = async () => {
     setSaving(true);
+    setSaveError(false);
     try {
       await updatePhotoDescription(familyId, photoId, value);
       setOpen(false);
+    } catch {
+      /* 失敗を無言にしない（閉じない＋理由を出す） */
+      setSaveError(true);
     } finally {
       setSaving(false);
     }
@@ -292,6 +297,11 @@ function DescriptionEditorInner({
           やめる
         </BigButton>
       </div>
+      {saveError && (
+        <p role="alert" className="mt-3 rounded-btn border-2 border-danger bg-danger-soft px-4 py-3 text-xl">
+          保存できませんでした。通信を確認して、もう一度ためしてください。
+        </p>
+      )}
     </div>
   );
 }
@@ -321,31 +331,40 @@ function TakenDateEditorInner({
 }) {
   const [value, setValue] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-btn border-2 border-line bg-surface px-4 py-3">
-      <label className="text-xl font-semibold">
-        撮影日（わかる場合）
-        <input
-          type="date"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="ml-3 rounded-btn border-2 border-line bg-white px-3 py-2 text-xl"
-        />
-      </label>
-      <BigButton
-        tone="quiet"
-        disabled={saving}
-        className="px-5"
-        onClick={() => {
-          setSaving(true);
-          setPhotoTakenDate(familyId, photoId, value || "")
-            .catch(() => undefined)
-            .finally(() => setSaving(false));
-        }}
-      >
-        保存
-      </BigButton>
+    <div className="inline-flex flex-col gap-2">
+      <div className="inline-flex items-center gap-2 rounded-btn border-2 border-line bg-surface px-4 py-3">
+        <label className="text-xl font-semibold">
+          撮影日（わかる場合）
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="ml-3 rounded-btn border-2 border-line bg-white px-3 py-2 text-xl"
+          />
+        </label>
+        <BigButton
+          tone="quiet"
+          disabled={saving}
+          className="px-5"
+          onClick={() => {
+            setSaving(true);
+            setSaveError(false);
+            setPhotoTakenDate(familyId, photoId, value || "")
+              .catch(() => setSaveError(true))
+              .finally(() => setSaving(false));
+          }}
+        >
+          保存
+        </BigButton>
+      </div>
+      {saveError && (
+        <p role="alert" className="rounded-btn border-2 border-danger bg-danger-soft px-4 py-3 text-xl">
+          撮影日を保存できませんでした。通信を確認して、もう一度ためしてください。
+        </p>
+      )}
     </div>
   );
 }
@@ -359,11 +378,18 @@ interface LinkSectionProps {
   allLabels: { id: string; label: string; href: string }[];
   emptyNote: string;
   isFamily: boolean;
-  onToggle: (id: string, linked: boolean) => void;
+  onToggle: (id: string, linked: boolean) => Promise<void> | void;
 }
 
 function LinkSection({ kind, familyId, linkedIds, allLabels, emptyNote, isFamily, onToggle }: LinkSectionProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [linkError, setLinkError] = useState(false);
+
+  /* 関連付けの失敗を無言にしない（チップが変わらないだけだと成功と区別できない） */
+  const toggle = (id: string, linked: boolean) => {
+    setLinkError(false);
+    Promise.resolve(onToggle(id, linked)).catch(() => setLinkError(true));
+  };
 
   const linked = allLabels.filter((l) => linkedIds.includes(l.id));
   const pickable = allLabels.filter((l) => !linkedIds.includes(l.id));
@@ -391,7 +417,7 @@ function LinkSection({ kind, familyId, linkedIds, allLabels, emptyNote, isFamily
               kind={kind}
               label={l.label}
               href={l.href}
-              onRemove={isFamily ? () => onToggle(l.id, false) : undefined}
+              onRemove={isFamily ? () => toggle(l.id, false) : undefined}
             />
           ))}
         </div>
@@ -399,6 +425,12 @@ function LinkSection({ kind, familyId, linkedIds, allLabels, emptyNote, isFamily
 
       {linked.length === 0 && (
         <p className="mt-3 text-xl text-ink-soft">{emptyNote}</p>
+      )}
+
+      {linkError && (
+        <p role="alert" className="mt-4 rounded-btn border-2 border-danger bg-danger-soft px-4 py-3 text-xl">
+          関連付けを変更できませんでした。通信を確認して、もう一度ためしてください。
+        </p>
       )}
 
       {pickerOpen && (
@@ -410,7 +442,7 @@ function LinkSection({ kind, familyId, linkedIds, allLabels, emptyNote, isFamily
                   <span className="truncate text-2xl">{l.label}</span>
                   <BigButton
                     tone="go"
-                    onClick={() => onToggle(l.id, true)}
+                    onClick={() => toggle(l.id, true)}
                     aria-label={`${l.label}を関連付ける`}
                   >
                     つなげる

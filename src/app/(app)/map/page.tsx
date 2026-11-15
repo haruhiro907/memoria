@@ -154,10 +154,10 @@ export default function MapPage() {
                             className="shrink-0 rounded-card border-2 border-dashed border-line px-3 py-3"
                             aria-label="この年の出来事（順序ははっきりしない）"
                           >
-                            <p className="text-lg font-bold text-ink-soft">この年の出来事（順序ははっきりしない）</p>
+                            <p className="text-xl font-bold text-ink-soft">この年の出来事（順序ははっきりしない）</p>
                             <ul className="mt-3 flex gap-4">
                               {block.yearOnly.map((st) => (
-                                <li key={st.id} className="w-48 shrink-0">
+                                <li key={st.id} className="w-72 shrink-0">
                                   <Station station={st} />
                                 </li>
                               ))}
@@ -168,7 +168,7 @@ export default function MapPage() {
                         <ul className="flex items-start gap-4">
                           {(block.yearOnly.length === 1 ? [...block.yearOnly, ...block.precise] : block.precise).map(
                             (st) => (
-                              <li key={st.id} className="w-48 shrink-0">
+                              <li key={st.id} className="w-72 shrink-0">
                                 <Station station={st} />
                               </li>
                             ),
@@ -186,7 +186,7 @@ export default function MapPage() {
           {model.eraEvents.length > 0 && (
             <section className="mt-10" aria-label="時期がくわしくない出来事">
               <h3 className="text-2xl font-bold">時期がくわしくない出来事</h3>
-              <p className="mt-1 text-lg text-ink-soft">
+              <p className="mt-1 text-xl text-ink-soft">
                 年が分からないので、道には置かずにここに置いています。
               </p>
               <ul className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -232,8 +232,8 @@ function Station({ station }: { station: RoadStation }) {
     <div>
       {station.photos.length > 0 && (
         <ul className="flex gap-2">
-          {station.photos.slice(0, 3).map((p) => (
-            <li key={p.id} className="w-16 shrink-0">
+          {station.photos.slice(0, 2).map((p) => (
+            <li key={p.id} className="w-32 shrink-0">
               <PhotoTile
                 href={`/photos/${p.id}`}
                 src={p.data.downloadURL}
@@ -248,8 +248,8 @@ function Station({ station }: { station: RoadStation }) {
         className="mt-2 flex min-h-24 flex-col rounded-card border-2 border-line bg-white px-4 py-3 transition-transform duration-150 hover:border-ink-soft active:scale-[0.99]"
         aria-label={`${label ?? "時期がくわしくない"}、${station.data.title}`}
       >
-        <span className="text-lg font-bold text-ink-soft">{label ?? "時期がくわしくない"}</span>
-        <span className="mt-1 text-xl font-bold leading-snug">
+        <span className="text-xl font-bold text-ink-soft">{label ?? "時期がくわしくない"}</span>
+        <span className="mt-1 text-2xl font-bold leading-snug">
           {station.data.icon ? `${station.data.icon} ` : ""}
           {station.data.title}
         </span>

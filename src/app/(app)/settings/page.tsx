@@ -17,6 +17,7 @@ import {
 import { BigButton } from "@/components/ui/BigButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AlertIcon } from "@/components/ui/icons";
+import { buildMemoriaExport } from "@/lib/firestore/export";
 
 /**
  * 家族の設定（/settings、family ロール限定 / docs/phase4-spec.md §1.2・§1.5・§8）
@@ -114,6 +115,65 @@ export default function SettingsPage() {
           </ul>
         )}
       </section>
+      {/* 記録の持ち出し */}
+      <section className="mt-12" aria-labelledby="export-heading">
+        <h3 id="export-heading" className="text-2xl font-bold">
+          記録をダウンロード
+        </h3>
+        <p className="mt-3 text-xl leading-relaxed text-ink-soft">
+          人物・出来事・写真と関連付けの記録を、JSON ファイルで持ち出せます。
+          写真の画像そのものはファイルに含まれませんが、記録の中の URL からたどって開けます。
+        </p>
+        <ExportButton familyId={familyId} familyName={familyName} />
+      </section>
+    </div>
+  );
+}
+
+/* ---------- 記録のエクスポート ---------- */
+
+function ExportButton({ familyId, familyName }: { familyId: string | null; familyName: string | null }) {
+  const [working, setWorking] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const run = async () => {
+    if (!familyId || working) return;
+    setWorking(true);
+    setDone(false);
+    setFailed(false);
+    try {
+      const data = await buildMemoriaExport(familyId, familyName);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `memoria-export-${dayjs().format("YYYYMMDD")}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setDone(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  return (
+    <div className="mt-5">
+      <BigButton tone="quiet" disabled={working || !familyId} onClick={() => void run()}>
+        {working ? "用意しています…" : "記録をダウンロードする"}
+      </BigButton>
+      {done && (
+        <p className="mt-3 text-xl text-go-deep" aria-live="polite">
+          ダウンロードしました。大切に保管してください。
+        </p>
+      )}
+      {failed && (
+        <p role="alert" className="mt-3 text-xl text-danger">
+          ダウンロードできませんでした。通信を確認して、もう一度ためしてください。
+        </p>
+      )}
     </div>
   );
 }
