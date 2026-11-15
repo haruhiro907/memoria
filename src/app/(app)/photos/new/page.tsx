@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { addPhoto, reservePhotoId } from "@/lib/firestore/photo";
 import { uploadPhotoFile } from "@/lib/firebase/upload";
 import { useSession } from "@/lib/auth/session";
@@ -79,14 +79,20 @@ export default function PhotoNewPage() {
   /* ---------- 一括追加（家族のまとめ入れ用。1 枚だけの体験は従来どおり） ---------- */
   const [batch, setBatch] = useState<BatchItem[] | null>(null);
   const batchRunning = useRef(false);
+  /* 一括投入の中断要求（進行中の 1 枚が終わった時点で止まる） */
+  const batchCancel = useRef(false);
+  const [batchActive, setBatchActive] = useState(false);
 
   const runBatch = useCallback(
     async (initial: BatchItem[]) => {
       if (batchRunning.current) return;
       batchRunning.current = true;
+      batchCancel.current = false;
+      setBatchActive(true);
       let items = initial;
       for (let i = 0; i < items.length; i++) {
         if (items[i].status === "done") continue;
+        if (batchCancel.current) break;
         items = items.map((it, j) => (j === i ? { ...it, status: "adding" as const, error: undefined } : it));
         setBatch(items);
         try {
@@ -100,9 +106,20 @@ export default function PhotoNewPage() {
         setBatch(items);
       }
       batchRunning.current = false;
+      setBatchActive(false);
     },
     [uploadOne],
   );
+
+  /* 投入中のタブ閉じ・再読み込みを防ぐ（ブラウザ標準の確認が出る） */
+  useEffect(() => {
+    if (stage !== "batch" || !batchActive) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [stage, batchActive]);
 
   const beginBatch = useCallback(
     (files: File[]) => {
@@ -218,24 +235,42 @@ export default function PhotoNewPage() {
       {stage === "batch" && batch && (
         <div className="mt-8">
           <p className="text-center text-2xl" aria-live="polite">
-            {batchSettled ? (
+            {batchActive ? (
+              <>
+                写真を入れています…（<span className="font-bold">{batchDoneCount} / {batch.length} 枚</span>）
+                <span className="mt-1 block text-xl text-ink-soft">終わるまで、この画面のままにしてください。</span>
+              </>
+            ) : batchSettled ? (
               <>
                 <span className="font-bold">{batchDoneCount} / {batch.length} 枚</span> 入りました
               </>
             ) : (
               <>
-                写真を入れています…（<span className="font-bold">{batchDoneCount} / {batch.length} 枚</span>）
-                <span className="mt-1 block text-lg text-ink-soft">終わるまで、この画面のままにしてください。</span>
+                <span className="font-bold">{batchDoneCount} / {batch.length} 枚</span> 入りました
+                <span className="mt-1 block text-xl text-ink-soft">途中で止まっています。下のボタンで続きを入れられます。</span>
               </>
             )}
           </p>
+
+          {batchActive && (
+            <div className="mt-6 text-center">
+              <BigButton
+                tone="quiet"
+                onClick={() => {
+                  batchCancel.current = true;
+                }}
+              >
+                ここまでにして止める
+              </BigButton>
+            </div>
+          )}
 
           <ul className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4">
             {batch.map((item, i) => (
               <li key={i} className="rounded-card bg-surface p-2 ring-2 ring-inset ring-line">
                 <img src={item.preview} alt={`選んだ写真 ${i + 1}`} className="aspect-square w-full rounded-xl object-cover" />
                 <p className="px-1 pb-1 pt-2 text-center text-lg font-semibold">
-                  {item.status === "waiting" && "待機中"}
+                  {item.status === "waiting" && (batchActive ? "待機中" : "まだ入れていません")}
                   {item.status === "adding" && "入れています…"}
                   {item.status === "done" && <span className="text-go-deep">入りました</span>}
                   {item.status === "error" && <span className="text-danger">入れられませんでした</span>}
@@ -256,8 +291,13 @@ export default function PhotoNewPage() {
             ))}
           </ul>
 
-          {batchSettled && (
+          {!batchActive && (
             <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {!batchSettled && (
+                <BigButton tone="go" wide icon={<ImagesIcon size={36} />} onClick={() => batch && void runBatch(batch)}>
+                  残りを入れる
+                </BigButton>
+              )}
               <BigButton tone="go" wide icon={<ImagesIcon size={36} />} onClick={reselect}>
                 もっと追加する
               </BigButton>

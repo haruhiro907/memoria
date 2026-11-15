@@ -12,6 +12,8 @@ import dayjs from "dayjs";
 /*
  * ホーム画面
  * - 「今日の思い出」→ 最近の写真 → 主操作の順。写真がいつも近くにある。
+ * - 焦点の整理: 目立たせる主操作は「思い出を探す」1 つだけ（go 色は 1 つ）。
+ *   残りの探し方は「ほかの探し方」に塊として静かに置く（隠さず、競わせない）。
  * - 写真が 1 枚もない日は、最初の 1 枚を追加する動きだけを目立たせる。
  */
 export default function HomePage() {
@@ -36,7 +38,7 @@ export default function HomePage() {
   }, [familyId]);
 
   const todays = today ? (photos ?? []).filter((p) => p.data.takenDate === today).slice(0, 3) : [];
-  const recent = (photos ?? []).slice(0, 8);
+  const recent = (photos ?? []).slice(0, 4);
 
   const greeting = displayName ? `${displayName}さん、こんにちは` : "こんにちは";
 
@@ -101,15 +103,24 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* 主操作 */}
-      <nav aria-label="メインメニュー" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <MenuTile href="/photos" icon={<AlbumIcon size={40} />} label="写真を見る" tone="plain" />
-        <MenuTile href="/photos/new" icon={<CameraIcon size={40} />} label="写真を追加" tone="go" />
+      {/* 主操作: 目立たせるのは「思い出を探す」だけ */}
+      <nav aria-label="メインメニュー" className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <MenuTile href="/explore" icon={<SwipeIcon size={40} />} label="思い出を探す" tone="go" />
-        <MenuTile href="/people" icon={<PeopleIcon size={40} />} label="人物から探す" tone="plain" />
-        <MenuTile href="/events" icon={<FlagIcon size={40} />} label="出来事から探す" tone="plain" />
-        <MenuTile href="/map" icon={<MapIcon size={40} />} label="人生の地図" tone="plain" />
+        <MenuTile href="/photos/new" icon={<CameraIcon size={40} />} label="写真を追加" tone="plain" />
       </nav>
+
+      {/* ほかの探し方: 隠さず、塊として静かに置く */}
+      <section className="mt-10" aria-labelledby="more-heading">
+        <h3 id="more-heading" className="text-2xl font-bold">
+          ほかの探し方
+        </h3>
+        <nav aria-label="ほかの探し方" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <MenuTile small href="/photos" icon={<AlbumIcon size={32} />} label="写真を見る" tone="plain" />
+          <MenuTile small href="/people" icon={<PeopleIcon size={32} />} label="人物から探す" tone="plain" />
+          <MenuTile small href="/events" icon={<FlagIcon size={32} />} label="出来事から探す" tone="plain" />
+          <MenuTile small href="/map" icon={<MapIcon size={32} />} label="人生の地図" tone="plain" />
+        </nav>
+      </section>
 
       {/* 家族の管理（family ロールのみ）: 本人アカウントの発行・設定 */}
       {role === "family" && (
@@ -119,6 +130,13 @@ export default function HomePage() {
           </BigLink>
         </section>
       )}
+
+      {/* 使い方（全ロール）: 一番下に静かに置く */}
+      <section className="mt-6" aria-label="使い方">
+        <BigLink href="/help" tone="quiet" wide>
+          使い方・こまったとき
+        </BigLink>
+      </section>
 
       {role === "family" && (
         <p className="mt-10 text-center text-lg text-ink-soft">
@@ -136,16 +154,30 @@ function MenuTile({
   label,
   icon,
   tone,
+  small = false,
 }: {
   href: string;
   label: string;
   icon: React.ReactNode;
   tone: Tone;
+  small?: boolean;
 }) {
   const colorClass =
     tone === "go"
       ? "border-go-deep bg-go-soft hover:bg-go"
       : "border-line bg-surface hover:bg-surface-accent";
+
+  if (small) {
+    return (
+      <Link
+        href={href}
+        className={`flex min-h-24 items-center gap-4 rounded-card border-2 px-6 py-5 transition-colors duration-150 active:scale-[0.99] ${colorClass}`}
+      >
+        <span aria-hidden="true">{icon}</span>
+        <span className="text-2xl font-bold leading-snug">{label}</span>
+      </Link>
+    );
+  }
 
   return (
     <Link
